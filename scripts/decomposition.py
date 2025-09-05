@@ -447,4 +447,123 @@ def calculate_sensitivity(precipitation_model, count_model, intensity_model, pro
     return apply_error_masking(precipitation_error, count_error, probability_error, intensity_error, residual_error,
                                both_defined_mask, both_nan_mask, model_only_mask, observed_only_mask)
 
+def absolute_error(e_num, e_prob, e_intensity, residual):
+    """
+    Compute the absolute total error by summing all error components 
+    (number, probability, intensity, residual) together first, and then 
+    taking the absolute value of this domain-total.
+
+    Formula:
+        error = | Σ (e_num + e_prob + e_intensity + residual) |
+
+    Inputs
+    -------
+    e_num : array-like
+        Error component related to precipitation occurrence/number of events.
+    e_prob : array-like
+        Error component related to precipitation frequency/probability.
+    e_intensity : array-like
+        Error component related to precipitation intensity.
+    residual : array-like
+        Residual error term from the decomposition.
+
+    Output
+    -------
+    float
+        Absolute total error value after domain summation and absolute operation.
+    """
+    return np.abs(np.nansum(e_num + e_prob + e_intensity + residual))
+
+
+def regime_additive(e_num, e_prob, e_intensity, residual):
+    """
+    Compute the regime-additive error by taking the absolute value 
+    of the combined error components at each gridpoint/regime, then 
+    summing across the domain.
+
+    Formula:
+        error = Σ | e_num + e_prob + e_intensity + residual |
+
+    Inputs
+    -------
+    e_num : array-like
+        Error component related to precipitation occurrence/number of events.
+    e_prob : array-like
+        Error component related to precipitation frequency/probability.
+    e_intensity : array-like
+        Error component related to precipitation intensity.
+    residual : array-like
+        Residual error term from the decomposition.
+
+    Output
+    -------
+    float
+        Additive error value across regimes, accounting for local compensations.
+    """
+    return np.nansum(np.abs(e_num + e_prob + e_intensity + residual))
+
+
+def decomposition_additive(e_num, e_prob, e_intensity, residual):
+    """
+    Compute the decomposition-additive error by summing each error 
+    component across the domain individually, taking the absolute 
+    value of each component’s domain-total, and then adding them 
+    together.
+
+    Formula:
+        error = |Σ e_num| + |Σ e_prob| + |Σ e_intensity| + |Σ residual|
+
+    Inputs
+    -------
+    e_num : array-like
+        Error component related to precipitation occurrence/number of events.
+    e_prob : array-like
+        Error component related to precipitation frequency/probability.
+    e_intensity : array-like
+        Error component related to precipitation intensity.
+    residual : array-like
+        Residual error term from the decomposition.
+
+    Output
+    -------
+    float
+        Decomposition-based additive error, emphasizing each component’s 
+        domain-total contribution.
+    """
+    return (np.absolute(np.nansum(e_num)) +
+            np.absolute(np.nansum(e_prob)) +
+            np.absolute(np.nansum(e_intensity)) +
+            np.absolute(np.nansum(residual)))
+
+
+def additive_error(e_num, e_prob, e_intensity, residual):
+    """
+    Compute the additive error by taking the absolute value of each 
+    error component pointwise, summing over the domain, and then 
+    adding these component-wise sums together.
+
+    Formula:
+        error = Σ|e_num| + Σ|e_prob| + Σ|e_intensity| + Σ|residual|
+
+    Inputs
+    -------
+    e_num : array-like
+        Error component related to precipitation occurrence/number of events.
+    e_prob : array-like
+        Error component related to precipitation frequency/probability.
+    e_intensity : array-like
+        Error component related to precipitation intensity.
+    residual : array-like
+        Residual error term from the decomposition.
+
+    Output
+    -------
+    float
+        Total additive error without cancellation, based on the sum 
+        of pointwise absolute values for each component.
+    """
+    return (np.nansum(np.absolute(e_num)) +
+            np.nansum(np.absolute(e_prob)) +
+            np.nansum(np.absolute(e_intensity)) +
+            np.nansum(np.absolute(residual)))
 

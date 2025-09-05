@@ -8,7 +8,7 @@
 #                  Importation des modules et libraries                  #
 ##########################################################################
 
-import parametres
+import parametres #ensure this file is correctly configured
 
 from decomposition import assign_bins
 from decomposition import decompose_regime
@@ -27,11 +27,11 @@ import pandas as pd
 #  Initialisation pour tracer figures decompo et decompo-erreur         #
 #########################################################################
 
-# Path to save the data
+# Path to save the data that have been "binned"
 save_path = parametres.params.DECOMPO_PATH
 
-# Path to retrieve the data
-data_path = parametres.params.SAVE_PATH
+# Path to retrieve the initial data
+data_path = parametres.params.INITIAL_DATA_PATH
 
 # Selection of bins
 bins_w = parametres.params.BINS_W
@@ -44,13 +44,13 @@ t1 = time.time()
 # Iterate through subdirectories
 for subdir in os.listdir(data_path):
     sub_path = os.path.join(data_path, subdir) 
-    #if subdir in ['NEXRAD_STAGE_IV']:
-        # Search for files corresponding to "_w", "_pr" and "_tcwv" in the subdirectory
+    
+    # Search for files corresponding to "_w", "_pr" and "_tcwv" in the subdirectory
     w_files = glob.glob(os.path.join(sub_path, f'*{subdir}*w.nc4'))
     pr_files = glob.glob(os.path.join(sub_path, f'*{subdir}*pr.nc4'))
     tcwv_files = glob.glob(os.path.join(sub_path, f'*{subdir}*tcwv.nc4'))
-        # Iterate through files for each date
-        
+    
+    # Iterate through files for each date    
     for pr_file in pr_files:
             
         date = pr_file.split('_')[-2]  # Extract the date from the file name
@@ -67,11 +67,16 @@ for subdir in os.listdir(data_path):
             tcwv_data = xr.open_dataset(tcwv_file)
             
         for sub_domain in parametres.params.SUBDOM:
-            # Read files with xarray
+            # Apply mask over domain
             pr_data = xr.open_dataset(pr_file)
             pr_data = pr_data.where(parametres.params.SUBDOM_MASK == parametres.params.SUBDOM[sub_domain]['number'])
             tcwv_data = tcwv_data.where(parametres.params.SUBDOM_MASK == parametres.params.SUBDOM[sub_domain]['number'])
             w_data = w_data.where(parametres.params.SUBDOM_MASK == parametres.params.SUBDOM[sub_domain]['number'])
+
+            # Calculate a 3D array containing:
+            #        - The count of data points in each regime.
+            #        - The count of precipitation data points above the threshold in each regime.
+            #        - The sum of precipitation values above the threshold in each regime.
 
             index_w = assign_bins(w_data, bins_w)
             index_tcwv = assign_bins(tcwv_data, bins_tcwv)
